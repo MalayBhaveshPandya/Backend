@@ -21,5 +21,7 @@ const eventRegistrationSchema = new mongoose.Schema({
   }
 });
 
-
-module.exports=mongoose.model("EventRegistration",eventRegistrationSchema);
+const EventRegistration = mongoose.model("EventRegistration", eventRegistrationSchema);
+module.exports =
+  mongoose.models.EventRegistration ||
+  mongoose.model("EventRegistration", eventRegistrationSchema);

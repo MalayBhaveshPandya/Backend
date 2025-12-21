@@ -45,4 +45,5 @@ const StuSchema=new Schema({
 })
 
 const Student=mongoose.model("Student",StuSchema);
-module.exports=Student;
+module.exports =
+  mongoose.models.Student || mongoose.model("Student", StuSchema);

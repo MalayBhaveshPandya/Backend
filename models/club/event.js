@@ -4,36 +4,39 @@ const eventSchema = new mongoose.Schema({
   organizer: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Club",
-    required: true 
- },
- title: {
+    required: true,
+  },
+  title: {
     type: String,
-    required: true
- },
+    required: true,
+  },
   description: {
-    type: String, 
-    required: true 
- },
-  date: { 
-    type: Date, 
-    required: true
- },
-  location: { 
-    type: String, 
-    required: true
- },
-  poster:{
-    type:String,
-    required:true
- },
+    type: String,
+    required: true,
+  },
+  date: {
+    type: Date,
+    required: true,
+  },
+  location: {
+    type: String,
+    required: true,
+  },
+  poster: {
+    type: String,
+    required: true,
+  },
   registrationForm: {
-    type: [{ 
-        label: String, 
-        fieldType: String, 
-        required: Boolean 
-    }], 
+    type: [
+      {
+        label: String,
+        fieldType: String,
+        required: Boolean,
+      },
+    ],
     default: [],
   },
 });
 
-module.exports = mongoose.model("Event", eventSchema);
+module.exports =
+  mongoose.models.Event || mongoose.model("Event", eventSchema);
