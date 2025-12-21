@@ -177,13 +177,22 @@ const getAllEvents = async (req, res) => {
   try {
     const events = await Event.find()
       .sort({ date: -1 })
-      .populate("organizer", "name email membersCount logo isVerified");
+      .populate({
+        path: "organizer",
+        select: "name email membersCount logo isVerified",
+        strictPopulate: false
+      });
+
     res.json(events);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Failed to fetch events" });
+    console.error("GET EVENTS ERROR:", error);
+    res.status(500).json({
+      message: "Failed to fetch events",
+      error: error.message
+    });
   }
 };
+
 
 
 // Getting events of logged-in club
