@@ -30,6 +30,7 @@ app.use(async (req, res, next) => {
   }
   next();
 });
+app.options("*", cors(corsOptions));
 
 app.get("/", (req, res) => res.send("I am root"));
 
