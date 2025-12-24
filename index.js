@@ -4,14 +4,27 @@ require("dotenv").config();
 const cors = require("cors");
 
 const app = express();
+app.use((req, res, next) => {
+  res.setHeader(
+    "Access-Control-Allow-Origin",
+    "https://frontend-92cs-d24p11bf0-malay-bhavesh-pandyas-projects.vercel.app"
+  );
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET,POST,PUT,DELETE,OPTIONS"
+  );
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Content-Type,Authorization"
+  );
+  res.setHeader("Access-Control-Allow-Credentials", "true");
 
-const corsOptions = {
-  origin: "https://frontend-92cs.vercel.app",
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true
-};
-app.use(cors(corsOptions));
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
