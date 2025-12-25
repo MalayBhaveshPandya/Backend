@@ -7,7 +7,7 @@ const connectToMongo = require("./db");
 const app = express();
 
 const corsOptions = {
-  origin: "https://frontend-92cs-d24p11bf0-malay-bhavesh-pandyas-projects.vercel.app",
+  origin: "https://frontend-92cs.vercel.app",
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
