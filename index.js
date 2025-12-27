@@ -17,11 +17,11 @@ const corsOptions = {
     // allow server-to-server requests (no origin)
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) {
-      callback(null, origin); // Return the specific origin, not true
-    } else {
-      console.warn("Blocked CORS request from:", origin);
-      callback(new Error("Not allowed by CORS"));
+      // Return exact origin string to avoid '*'
+      return callback(null, origin);
     }
+    console.warn("Blocked CORS request from:", origin);
+    return callback(new Error("Not allowed by CORS"));
   },
   credentials: true, // required for cookies/auth
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
