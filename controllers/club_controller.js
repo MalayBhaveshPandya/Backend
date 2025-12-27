@@ -5,7 +5,7 @@ const Student = require("../models/student/student");
 const OtpVerification = require("../models/student/otpv");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const connectToMongo = require("../../db");
+const connectToMongo = require("../db");
 const { 
   sendOTP1, 
   sendAdminClubAlert, 
