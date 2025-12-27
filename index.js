@@ -35,7 +35,25 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ----------------------
-// MONGODB CONNECTION (CACHED)
+// HEALTH ENDPOINT (No Global DB Middleware)
+// ----------------------
+app.get("/api/health", async (req, res) => {
+  try {
+    const start = Date.now();
+    await connectToMongo();
+    const ms = Date.now() - start;
+    res.json({
+      ok: true,
+      dbConnectedMs: ms,
+      origin: req.headers.origin || null,
+    });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// ----------------------
+// MONGODB CONNECTION MIDDLEWARE (For other routes)
 // ----------------------
 app.use(async (req, res, next) => {
   try {
@@ -66,24 +84,6 @@ app.use("/api/chat", require("./routes/chatbot/chatbot"));
 app.use((err, req, res, next) => {
   console.error("Unhandled error:", err.stack || err);
   res.status(500).json({ error: "Internal Server Error" });
-});
-
-// ----------------------
-// HEALTH ENDPOINT
-// ----------------------
-app.get("/api/health", async (req, res) => {
-  try {
-    const start = Date.now();
-    await connectToMongo();
-    const ms = Date.now() - start;
-    res.json({
-      ok: true,
-      dbConnectedMs: ms,
-      origin: req.headers.origin || null,
-    });
-  } catch (err) {
-    res.status(500).json({ ok: false, error: err.message });
-  }
 });
 
 module.exports = app;
