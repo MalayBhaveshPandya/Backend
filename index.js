@@ -12,26 +12,27 @@ const allowedOrigins = [
   "http://localhost:5173", // optional for local dev
 ];
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      // allow server-to-server requests (no origin)
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        console.warn("Blocked CORS request from:", origin);
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true, // required for cookies/auth
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
+const corsOptions = {
+  origin: function (origin, callback) {
+    // allow server-to-server requests (no origin)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      callback(null, origin); // Return the specific origin, not true
+    } else {
+      console.warn("Blocked CORS request from:", origin);
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true, // required for cookies/auth
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  optionsSuccessStatus: 200 // some legacy browsers choke on 204
+};
 
-// Handle preflight OPTIONS requests
-app.options("*", cors());
+app.use(cors(corsOptions));
+
+// Handle preflight OPTIONS requests explicitly
+app.options("*", cors(corsOptions));
 
 // ----------------------
 // BODY PARSERS
