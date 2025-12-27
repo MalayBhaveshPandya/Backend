@@ -5,6 +5,7 @@ const Student = require("../models/student/student");
 const OtpVerification = require("../models/student/otpv");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const connectToMongo = require("../../db");
 const { 
   sendOTP1, 
   sendAdminClubAlert, 
@@ -13,10 +14,13 @@ const {
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-
-// Creating a new club
+// ----------------------
+// Create a new club
+// ----------------------
 const createClub = async (req, res) => {
   try {
+    await connectToMongo();
+
     let club = await Club.findOne({ name: req.body.name });
     if (club) {
       return res.status(400).json({ error: "Club with this name already exists" });
@@ -45,31 +49,28 @@ const createClub = async (req, res) => {
 
     res.json({ success: true, authToken, club });
   } catch (error) {
-    console.error(error);
-    res.status(500).send("Internal Server Error");
+    console.error("❌ createClub error:", error.stack || error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
-
-// Club Logging in
+// ----------------------
+// Club login
+// ----------------------
 const clubLogin = async (req, res) => {
-  const { email, password } = req.body;
-
   try {
+    await connectToMongo();
+
+    const { email, password } = req.body;
     const club = await Club.findOne({ email });
+
     if (!club) {
-      return res.status(400).json({ 
-        success: false, 
-        error: "Invalid credentials" 
-      });
+      return res.status(400).json({ success: false, error: "Invalid credentials" });
     }
 
     const passMatch = await bcrypt.compare(password, club.password);
     if (!passMatch) {
-      return res.status(400).json({ 
-        success: false, 
-        error: "Invalid credentials" 
-      });
+      return res.status(400).json({ success: false, error: "Invalid credentials" });
     }
 
     const data = { club: { _id: club._id } };
@@ -77,63 +78,62 @@ const clubLogin = async (req, res) => {
 
     res.json({ success: true, authToken });
   } catch (error) {
-    console.error(error.message);
-    res.status(500).send("Internal Server Error");
+    console.error("❌ clubLogin error:", error.stack || error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
-
-// Getting club details
+// ----------------------
+// Get logged-in club details
+// ----------------------
 const getClub = async (req, res) => {
   try {
-    const clubId = req.club._id;
-    const club = await Club.findById(clubId).select("-password");
+    await connectToMongo();
+
+    const club = await Club.findById(req.club._id).select("-password");
     res.json(club);
   } catch (error) {
-    console.error(error.message);
-    res.status(500).send("Internal Server Error");
+    console.error("❌ getClub error:", error.stack || error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
-
-// Verifying OTP
+// ----------------------
+// Verify OTP
+// ----------------------
 const verifyOTP = async (req, res) => {
   try {
-    const { email, otp } = req.body;
+    await connectToMongo();
 
-    if (!email || !otp) {
-      return res.status(400).json({ message: "Missing email or OTP" });
-    }
+    const { email, otp } = req.body;
+    if (!email || !otp) return res.status(400).json({ message: "Missing email or OTP" });
 
     const club = await Club.findOne({ email });
-    if (!club) {
-      return res.status(400).json({ message: "Club not found" });
-    }
+    if (!club) return res.status(400).json({ message: "Club not found" });
 
     const otpRecord = await OtpVerification.findOne({ userId: club._id });
-    if (!otpRecord) {
-      return res.status(400).json({ message: "OTP record not found or already verified" });
-    }
+    if (!otpRecord) return res.status(400).json({ message: "OTP record not found or already verified" });
 
     const isMatch = await bcrypt.compare(otp, otpRecord.otp);
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid OTP" });
-    }
+    if (!isMatch) return res.status(400).json({ message: "Invalid OTP" });
 
     await Club.updateOne({ _id: club._id }, { isVerified: true });
     await OtpVerification.deleteMany({ userId: club._id });
 
     res.json({ message: "Email verified successfully" });
   } catch (error) {
-    console.error(error);
-    res.status(500).send("Internal Server Error");
+    console.error("❌ verifyOTP error:", error.stack || error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
-
-// Adding new event (only for approved clubs)
+// ----------------------
+// Add new event (approved clubs only)
+// ----------------------
 const addEvent = async (req, res) => {
   try {
+    await connectToMongo();
+
     const posterUrl = req.files?.poster
       ? req.files.poster[0].path
       : "https://example.com/default-poster.png";
@@ -161,92 +161,86 @@ const addEvent = async (req, res) => {
       }
     });
 
-    res.status(201).json({ 
-      message: "Event created successfully", 
-      event: newEvent 
-    });
+    res.status(201).json({ message: "Event created successfully", event: newEvent });
   } catch (error) {
-    console.error(error);
+    console.error("❌ addEvent error:", error.stack || error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
-
-const connectToMongo = require("../../db");
-const Event = require("../models/club/event");
-
-// GET /api/clubs/getevents
+// ----------------------
+// Get all events (public)
+// ----------------------
 const getAllEvents = async (req, res) => {
   try {
-    // ✅ Ensure MongoDB is connected (cached)
     await connectToMongo();
 
-    // ✅ Fetch events safely
     const events = await Event.find()
       .sort({ date: -1 })
-      .limit(100) // optional, prevents serverless timeout for large datasets
+      .limit(100) // prevent serverless timeout
       .populate({
         path: "organizer",
         select: "name email membersCount logo isVerified",
         strictPopulate: false,
-        match: { isVerified: true }, // optional: only verified organizers
-      });
+        match: { isVerified: true }, // optional
+      })
+      .lean();
 
+    console.log(`✅ Fetched ${events.length} events`);
     res.json(events);
   } catch (error) {
-    // ✅ Full stack logging for Vercel
-    console.error("GET EVENTS ERROR:", error.stack || error);
-
-    res.status(500).json({
-      message: "Failed to fetch events",
-      error: error.message,
-    });
+    console.error("❌ getAllEvents error:", error.stack || error);
+    res.status(500).json({ message: "Failed to fetch events", error: error.message });
   }
 };
 
-module.exports = getAllEvents;
-
-
-
-
-// Getting events of logged-in club
+// ----------------------
+// Get events for logged-in club
+// ----------------------
 const getClubEvents = async (req, res) => {
   try {
+    await connectToMongo();
+
     const events = await Event.find({ organizer: req.club._id })
-      .populate("organizer", "name email logo membersCount isVerified")
-      .sort({ date: -1 });
+      .sort({ date: -1 })
+      .populate({
+        path: "organizer",
+        select: "name email logo membersCount isVerified",
+        strictPopulate: false,
+      })
+      .lean();
+
     res.json(events);
   } catch (error) {
-    console.error(error);
+    console.error("❌ getClubEvents error:", error.stack || error);
     res.status(500).json({ message: "Failed to fetch club events" });
   }
 };
 
-
-// Getting registrations for a specific event (private)
+// ----------------------
+// Get registrations for a specific event (private)
+// ----------------------
 const getEventRegistrations = async (req, res) => {
   try {
-    const eventId = req.params.eventId;
-    const event = await Event.findById(eventId);
+    await connectToMongo();
 
-    if (!event) {
-      return res.status(404).json({ message: "Event not found" });
-    }
-    if (String(event.organizer) !== String(req.club._id)) {
-      return res.status(403).json({ message: "Not authorized" });
-    }
+    const eventId = req.params.eventId;
+    const event = await Event.findById(eventId).lean();
+
+    if (!event) return res.status(404).json({ message: "Event not found" });
+    if (String(event.organizer) !== String(req.club._id)) return res.status(403).json({ message: "Not authorized" });
 
     const registrations = await EventRegistration.find({ event: eventId })
       .populate("registrant", "name email rollno")
-      .sort({ registeredAt: -1 });
+      .sort({ registeredAt: -1 })
+      .lean();
 
     res.json(registrations);
   } catch (error) {
-    console.error(error);
+    console.error("❌ getEventRegistrations error:", error.stack || error);
     res.status(500).json({ message: "Failed to fetch registrations" });
   }
 };
-
 
 module.exports = {
   createClub,
@@ -256,5 +250,5 @@ module.exports = {
   addEvent,
   getAllEvents,
   getClubEvents,
-  getEventRegistrations
+  getEventRegistrations,
 };
