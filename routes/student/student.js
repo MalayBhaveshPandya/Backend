@@ -1,11 +1,10 @@
 const express = require("express");
 const router = express.Router();
-const cors = require("cors");
 const { body, validationResult } = require("express-validator");
 const { fetchStudent } = require("../../middleware/fetchstudent");
 const studentController = require("../../controllers/student_controller");
 
-router.use(cors());
+
 
 // Validating middleware wrapper
 const validate = (req, res, next) => {

@@ -1,6 +1,5 @@
 const express = require("express");
 const router = express.Router();
-const cors = require("cors");
 const axios = require("axios");
 const chatBot = async (req, res) => {
   const { messages } = req.body;
@@ -23,8 +22,8 @@ const chatBot = async (req, res) => {
       m.role === "assistant"
         ? "model"
         : m.role === "system"
-        ? "system"
-        : "user",
+          ? "system"
+          : "user",
     parts: [{ text: m.content }],
   }));
 
@@ -46,12 +45,12 @@ const chatBot = async (req, res) => {
     let assistantContent = "";
 
     if (candidate?.content?.parts && Array.isArray(candidate.content.parts)) {
-  assistantContent = candidate.content.parts.map((p) => p.text).join(" ");
-} else if (typeof candidate?.content === "string") {
-  assistantContent = candidate.content;
-} else {
-  assistantContent = "Sorry, no valid response from Gemini.";
-}
+      assistantContent = candidate.content.parts.map((p) => p.text).join(" ");
+    } else if (typeof candidate?.content === "string") {
+      assistantContent = candidate.content;
+    } else {
+      assistantContent = "Sorry, no valid response from Gemini.";
+    }
 
 
     console.log("Final assistant content sent:", assistantContent);
@@ -68,6 +67,6 @@ const chatBot = async (req, res) => {
     }
   }
 };
-module.exports={
-    chatBot
+module.exports = {
+  chatBot
 };
