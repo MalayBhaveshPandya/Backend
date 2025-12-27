@@ -9,20 +9,14 @@ const app = express();
 // ----------------------
 const allowedOrigins = [
   "https://frontend-92cs.vercel.app",
-  "http://localhost:5173", // optional for local dev
+  "https://www.frontend-92cs.vercel.app",
+  "http://localhost:5173",
+  "http://localhost:3000"
 ];
 
 const corsOptions = {
-  origin: function (origin, callback) {
-    // allow server-to-server requests (no origin)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
-      // Return exact origin string to avoid '*'
-      return callback(null, origin);
-    }
-    console.warn("Blocked CORS request from:", origin);
-    return callback(new Error("Not allowed by CORS"));
-  },
+  origin: allowedOrigins,
+
   credentials: true, // required for cookies/auth
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
