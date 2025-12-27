@@ -172,26 +172,40 @@ const addEvent = async (req, res) => {
 };
 
 
-// Getting all events (admin/approved view)
+const connectToMongo = require("../../db");
+const Event = require("../models/club/event");
+
+// GET /api/clubs/getevents
 const getAllEvents = async (req, res) => {
   try {
+    // ✅ Ensure MongoDB is connected (cached)
+    await connectToMongo();
+
+    // ✅ Fetch events safely
     const events = await Event.find()
       .sort({ date: -1 })
+      .limit(100) // optional, prevents serverless timeout for large datasets
       .populate({
         path: "organizer",
         select: "name email membersCount logo isVerified",
-        strictPopulate: false
+        strictPopulate: false,
+        match: { isVerified: true }, // optional: only verified organizers
       });
 
     res.json(events);
   } catch (error) {
-    console.error("GET EVENTS ERROR:", error);
+    // ✅ Full stack logging for Vercel
+    console.error("GET EVENTS ERROR:", error.stack || error);
+
     res.status(500).json({
       message: "Failed to fetch events",
-      error: error.message
+      error: error.message,
     });
   }
 };
+
+module.exports = getAllEvents;
+
 
 
 
