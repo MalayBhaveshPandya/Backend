@@ -1,5 +1,7 @@
 const mongoose = require("mongoose");
 
+const MONGO_URI = process.env.MONGO_URI;
+
 let cached = global.mongoose;
 
 if (!cached) {
@@ -7,12 +9,13 @@ if (!cached) {
 }
 
 async function connectToMongo() {
-  if (cached.conn) return cached.conn;
+  if (cached.conn) {
+    return cached.conn;
+  }
 
   if (!cached.promise) {
-    cached.promise = mongoose.connect(process.env.MONGO_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
+    cached.promise = mongoose.connect(MONGO_URI, {
+      bufferCommands: false,
     });
   }
 
